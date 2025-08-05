@@ -9,6 +9,7 @@ export class OpenAIScript implements INodeType {
     group: ['transform'],
     version: 1,
     description: 'Execute arbitrary JavaScript with access to the OpenAI SDK',
+    icon: 'file:openai.svg',
     defaults: {
       name: 'OpenAI Script',
     },
@@ -63,6 +64,21 @@ export class OpenAIScript implements INodeType {
     } catch (error) {
       throw new NodeOperationError(this.getNode(), (error as Error).message);
     }
-    return this.prepareOutputData(result as any);
+
+    if (result === undefined) {
+      throw new NodeOperationError(this.getNode(), 'No data was returned from the script');
+    }
+
+    let returnData: INodeExecutionData[];
+    try {
+      returnData = this.helpers.returnJsonArray(result as any) as INodeExecutionData[];
+    } catch (error) {
+      throw new NodeOperationError(
+        this.getNode(),
+        'The script result could not be converted into items',
+      );
+    }
+
+    return this.prepareOutputData(returnData);
   }
 }
