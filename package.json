@@ -1,0 +1,32 @@
+{
+  "name": "n8n-nodes-openai-script",
+  "version": "1.0.0",
+  "description": "An n8n community node for executing arbitrary JavaScript with access to the OpenAI SDK.",
+  "author": "",
+  "license": "MIT",
+  "main": "dist/nodes/OpenAIScript.node.js",
+  "types": "dist/nodes/OpenAIScript.node.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "openai": "^5.11.0"
+  },
+  "devDependencies": {
+    "n8n-core": "^1.97.0",
+    "n8n-workflow": "^1.97.0",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "n8n": {
+    "nodes": [
+      "dist/nodes/OpenAIScript.node.js"
+    ]
+  }
+}
