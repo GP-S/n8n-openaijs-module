@@ -1,0 +1,10 @@
+{
+  "node": "n8n-nodes-openai-script.openAIScript",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "details": "Execute arbitrary JavaScript with access to the OpenAI SDK",
+  "categories": ["Utility"],
+  "subcategories": {
+    "Utility": ["AI"]
+  }
+}
