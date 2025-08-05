@@ -1,4 +1,4 @@
-import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
+import type { ICredentialDataDecryptedObject, IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import OpenAI from 'openai';
 
@@ -14,27 +14,13 @@ export class OpenAIScript implements INodeType {
     },
     inputs: ['main'],
     outputs: ['main'],
-    credentials: [],
-    properties: [
+    credentials: [
       {
-        displayName: 'API Key',
-        name: 'apiKey',
-        type: 'string',
-        default: '',
+        name: 'openAiApiEndpoint',
         required: true,
-        description: 'Your OpenAI API key',
-        typeOptions: {
-          password: true,
-        },
       },
-      {
-        displayName: 'API Base URL',
-        name: 'baseUrl',
-        type: 'string',
-        default: '',
-        description: 'Optional custom base URL for the OpenAI API. Leave blank to use the default https://api.openai.com/v1.',
-        required: false,
-      },
+    ],
+    properties: [
       {
         displayName: 'Script',
         name: 'script',
@@ -53,8 +39,9 @@ export class OpenAIScript implements INodeType {
 
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
-    const apiKey = this.getNodeParameter('apiKey', 0) as string;
-    const baseUrl = this.getNodeParameter('baseUrl', 0) as string;
+    const credentials = (await this.getCredentials('openAiApiEndpoint')) as ICredentialDataDecryptedObject;
+    const apiKey = credentials.apiKey as string;
+    const baseUrl = (credentials.baseUrl as string) || '';
     const script = this.getNodeParameter('script', 0) as string;
 
     const config: Record<string, any> = { apiKey };
