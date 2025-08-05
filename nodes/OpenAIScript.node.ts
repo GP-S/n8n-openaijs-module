@@ -9,6 +9,7 @@ export class OpenAIScript implements INodeType {
     group: ['transform'],
     version: 1,
     description: 'Execute arbitrary JavaScript with access to the OpenAI SDK',
+    icon: 'file:openai.svg',
     defaults: {
       name: 'OpenAI Script',
     },
