@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp nodes/openai.svg dist/nodes/openai.svg",
     "prepare": "npm run build"
   },
   "dependencies": {
