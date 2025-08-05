@@ -29,8 +29,10 @@ export class OpenAIScript implements INodeType {
         name: 'script',
         type: 'string',
         typeOptions: {
-          editor: 'codeNodeEditor',
-          editorLanguage: 'javaScript',
+          editor: 'jsEditor',
+          rows: 10,
+          alwaysOpenEditWindow: false,
+          codeAutocomplete: 'function',
         },
         default: '',
         placeholder: 'return input;',
