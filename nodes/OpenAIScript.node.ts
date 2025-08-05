@@ -37,7 +37,8 @@ export class OpenAIScript implements INodeType {
         },
         default: '',
         placeholder: 'return input;',
-        description: 'Asynchronous JavaScript to execute. You can access `openai`, `input`, and `require`.',
+        description:
+          'Asynchronous JavaScript to execute. You can access `openai`, `input`, `require`, and workflow helpers like `$json` and `$input`.',
         required: true,
       },
     ],
@@ -57,16 +58,17 @@ export class OpenAIScript implements INodeType {
     const openai = new OpenAI(config);
 
     const data = this.getWorkflowDataProxy(0);
-    const sandbox: Record<string, any> = { openai, input: items, require };
-    Object.setPrototypeOf(sandbox, data);
     const asyncFunction = new Function(
-      'sandbox',
-      'with (sandbox) { return (async () => {' + '\n' + script + '\n' + '})(); }',
+      'openai',
+      'input',
+      'require',
+      'data',
+      'with (data) { return (async () => {' + '\n' + script + '\n' + '})(); }',
     );
 
     let result: unknown;
     try {
-      result = await asyncFunction(sandbox);
+      result = await asyncFunction(openai, items, require, data);
     } catch (error) {
       throw new NodeOperationError(this.getNode(), (error as Error).message);
     }
