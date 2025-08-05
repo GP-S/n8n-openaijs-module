@@ -1,9 +1,10 @@
-import type { ICredentialType, INodeProperties } from 'n8n-workflow';
+import type { ICredentialType, INodeProperties, Icon } from 'n8n-workflow';
 
 export class OpenAIApiEndpoint implements ICredentialType {
   name = 'openAiApiEndpoint';
   displayName = 'OpenAI API Endpoint';
   documentationUrl = 'https://platform.openai.com/docs/api-reference';
+  icon: Icon = 'file:openai.svg';
 
   properties: INodeProperties[] = [
     {
