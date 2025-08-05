@@ -15,7 +15,9 @@ export class OpenAIScript implements INodeType {
     },
     inputs: ['main'],
     outputs: ['main'],
-    credentials: [
+    parameterPane: 'wide',
+    credentials: 
+    [
       {
         name: 'openAiApiEndpoint',
         required: true,
@@ -27,8 +29,8 @@ export class OpenAIScript implements INodeType {
         name: 'script',
         type: 'string',
         typeOptions: {
-          rows: 8,
-          alwaysOpenEditWindow: true,
+          editor: 'codeNodeEditor',
+          editorLanguage: 'javaScript',
         },
         default: '',
         placeholder: 'return input;',
