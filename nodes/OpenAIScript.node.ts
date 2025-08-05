@@ -1,6 +1,13 @@
-import type { ICredentialDataDecryptedObject, IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
+import type {
+  ICredentialDataDecryptedObject,
+  IExecuteFunctions,
+  INodeExecutionData,
+  INodeType,
+  INodeTypeDescription,
+} from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import OpenAI from 'openai';
+import { createRequire } from 'module';
 
 export class OpenAIScript implements INodeType {
   description: INodeTypeDescription = {
@@ -30,10 +37,8 @@ export class OpenAIScript implements INodeType {
         type: 'string',
         noDataExpression: true,
         typeOptions: {
-          editor: 'jsEditor',
-          rows: 10,
-          alwaysOpenEditWindow: false,
-          codeAutocomplete: 'function',
+          editor: 'codeNodeEditor',
+          language: 'javascript',
         },
         default: '',
         placeholder: 'return input;',
@@ -57,18 +62,28 @@ export class OpenAIScript implements INodeType {
     }
     const openai = new OpenAI(config);
 
-    const data = this.getWorkflowDataProxy(0);
+    const requireFn = createRequire(__filename);
+    const dataProxy = this.getWorkflowDataProxy(0);
+    const workflow = new Proxy(
+      { openai, input: items, require: requireFn },
+      {
+        has: () => true,
+        get(target, key) {
+          if (key in target) {
+            return (target as any)[key];
+          }
+          return (dataProxy as any)[key];
+        },
+      },
+    );
     const asyncFunction = new Function(
-      'openai',
-      'input',
-      'require',
-      'data',
-      'with (data) { return (async () => {' + '\n' + script + '\n' + '})(); }',
+      'workflow',
+      'with (workflow) { return (async () => {' + '\n' + script + '\n' + '})(); }',
     );
 
     let result: unknown;
     try {
-      result = await asyncFunction(openai, items, require, data);
+      result = await asyncFunction(workflow);
     } catch (error) {
       throw new NodeOperationError(this.getNode(), (error as Error).message);
     }
