@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "build": "tsc && cp nodes/openai.svg dist/nodes/openai.svg",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "npm run build && node test/test-script.js"
   },
   "dependencies": {
     "openai": "^5.11.0"
