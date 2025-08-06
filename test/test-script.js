@@ -16,6 +16,8 @@ const { OpenAIScript } = require('../dist/nodes/OpenAIScript.node.js');
           "const os = require('os');" +
           "\nconsole.log('platform', os.platform());" +
           "\nconsole.log('openai chat defined', typeof openai.chat);" +
+          "\nconsole.log('fetch defined', typeof fetch);" +
+          "\nconsole.log('json stringify works', JSON.stringify({ test: 1 }));" +
           "\nreturn { ok: true };"
         );
       }

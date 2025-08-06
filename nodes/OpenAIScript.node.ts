@@ -41,7 +41,7 @@ export class OpenAIScript implements INodeType {
         },
         default: '',
         description:
-          'Asynchronous JavaScript to execute. You can access `openai`, `input`, `require`, and workflow helpers like `$json` and `$input`.',
+          'Asynchronous JavaScript to execute. You can access `openai`, `input`, `require`, `fetch`, `JSON`, and workflow helpers like `$json` and `$input`.',
         noDataExpression: true,
         required: true,
       },
@@ -64,10 +64,17 @@ export class OpenAIScript implements INodeType {
     const requireFn = createRequire(__filename);
     const dataProxy = this.getWorkflowDataProxy(0);
     const workflow = new Proxy(
-      { openai, input: items, require: requireFn, console },
       {
-        has(target, key) {
-          return key in target || key in (dataProxy as any) || key in globalThis;
+        openai,
+        input: items,
+        require: requireFn,
+        console,
+        fetch: (globalThis as any).fetch,
+        JSON: (globalThis as any).JSON,
+      },
+      {
+        has() {
+          return true;
         },
         get(target, key) {
           if (key in target) {
