@@ -21,6 +21,9 @@ const { OpenAIScript } = require('../dist/nodes/OpenAIScript.node.js');
           "\nreturn { ok: true };"
         );
       }
+      if (name === 'mode') {
+        return 'runOnceForAllItems';
+      }
       return '';
     },
     getWorkflowDataProxy() {

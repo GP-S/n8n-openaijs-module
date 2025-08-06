@@ -15,6 +15,7 @@
     "test": "npm run build && node test/test-script.js"
   },
   "dependencies": {
+    "langchain": "^0.3.0",
     "openai": "^5.11.0"
   },
   "devDependencies": {

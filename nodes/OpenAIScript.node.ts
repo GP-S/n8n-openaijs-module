@@ -23,7 +23,7 @@ export class OpenAIScript implements INodeType {
     inputs: ['main'],
     outputs: ['main'],
     parameterPane: 'wide',
-    credentials: 
+    credentials:
     [
       {
         name: 'openAiApiEndpoint',
@@ -31,6 +31,25 @@ export class OpenAIScript implements INodeType {
       },
     ],
     properties: [
+      {
+        displayName: 'Mode',
+        name: 'mode',
+        type: 'options',
+        noDataExpression: true,
+        options: [
+          {
+            name: 'Run Once for All Items',
+            value: 'runOnceForAllItems',
+            description: 'Run this code only once, no matter how many input items there are',
+          },
+          {
+            name: 'Run Once for Each Item',
+            value: 'runOnceForEachItem',
+            description: 'Run this code as many times as there are input items',
+          },
+        ],
+        default: 'runOnceForAllItems',
+      },
       {
         displayName: 'Script',
         name: 'script',
@@ -54,6 +73,7 @@ export class OpenAIScript implements INodeType {
     const apiKey = credentials.apiKey as string;
     const baseUrl = (credentials.baseUrl as string) || '';
     const script = this.getNodeParameter('script', 0) as string;
+    const mode = this.getNodeParameter('mode', 0) as string;
 
     const config: Record<string, any> = { apiKey };
     if (baseUrl) {
@@ -62,55 +82,94 @@ export class OpenAIScript implements INodeType {
     const openai = new OpenAI(config);
 
     const requireFn = createRequire(__filename);
-    const dataProxy = this.getWorkflowDataProxy(0);
-    const workflow = new Proxy(
-      {
-        openai,
-        input: items,
-        require: requireFn,
-        console,
-        fetch: (globalThis as any).fetch,
-        JSON: (globalThis as any).JSON,
-      },
-      {
-        has() {
-          return true;
+
+    const createWorkflowProxy = (index: number, inputData: any) => {
+      const dataProxy = this.getWorkflowDataProxy(index);
+      return new Proxy(
+        {
+          openai,
+          input: inputData,
+          item: inputData,
+          require: requireFn,
+          console,
+          fetch: (globalThis as any).fetch,
+          JSON: (globalThis as any).JSON,
         },
-        get(target, key) {
-          if (key in target) {
-            return (target as any)[key];
-          }
-          if (key in (dataProxy as any)) {
-            return (dataProxy as any)[key];
-          }
-          return (globalThis as any)[key];
+        {
+          has() {
+            return true;
+          },
+          get(target, key) {
+            if (key in target) {
+              return (target as any)[key];
+            }
+            if (key in (dataProxy as any)) {
+              return (dataProxy as any)[key];
+            }
+            return (globalThis as any)[key];
+          },
         },
-      },
-    );
+      );
+    };
+
     const asyncFunction = new Function(
       'workflow',
       'with (workflow) { return (async () => {' + '\n' + script + '\n' + '})(); }',
     );
 
-    let result: unknown;
-    try {
-      result = await asyncFunction(workflow);
-    } catch (error) {
-      throw new NodeOperationError(this.getNode(), (error as Error).message);
-    }
+    const returnData: INodeExecutionData[] = [];
 
-    if (result === undefined) {
-      throw new NodeOperationError(this.getNode(), 'No data was returned from the script');
-    }
+    if (mode === 'runOnceForAllItems') {
+      let result: unknown;
+      try {
+        result = await asyncFunction(createWorkflowProxy(0, items));
+      } catch (error) {
+        throw new NodeOperationError(this.getNode(), (error as Error).message);
+      }
 
-    let returnData: INodeExecutionData[];
-    try {
-      returnData = this.helpers.returnJsonArray(result as any) as INodeExecutionData[];
-    } catch (error) {
-      throw new NodeOperationError(
-        this.getNode(),
-        'The script result could not be converted into items',
-      );
+      if (result === undefined) {
+        throw new NodeOperationError(this.getNode(), 'No data was returned from the script');
+      }
+
+      try {
+        returnData.push(
+          ...(this.helpers.returnJsonArray(result as any) as INodeExecutionData[]),
+        );
+      } catch (error) {
+        throw new NodeOperationError(
+          this.getNode(),
+          'The script result could not be converted into items',
+        );
+      }
+    } else {
+      for (let i = 0; i < items.length; i++) {
+        let result: unknown;
+        try {
+          result = await asyncFunction(createWorkflowProxy(i, items[i]));
+        } catch (error) {
+          throw new NodeOperationError(this.getNode(), (error as Error).message, { itemIndex: i });
+        }
+
+        if (result === undefined) {
+          throw new NodeOperationError(
+            this.getNode(),
+            'No data was returned from the script',
+            { itemIndex: i },
+          );
+        }
+
+        try {
+          returnData.push(
+            ...(this.helpers.returnJsonArray(result as any) as INodeExecutionData[]),
+          );
+        } catch (error) {
+          throw new NodeOperationError(
+            this.getNode(),
+            'The script result could not be converted into items',
+            { itemIndex: i },
+          );
+        }
+      }
     }
 
     return this.prepareOutputData(returnData);

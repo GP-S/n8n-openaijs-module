@@ -7,7 +7,8 @@ An external node for [n8n](https://n8n.io/) that lets you run arbitrary asynchro
 * **Execute custom code** – Write any asynchronous JavaScript and use `await` without boilerplate.
 * **OpenAI SDK** – A fully initialised `openai` client is injected into your script, allowing you to call any OpenAI API supported by version 5.11.0.
 * **Access input items** – The `input` variable contains the array of items returned by `this.getInputData()`.
-* **Use `require`** – Import additional Node.js packages available in your n8n instance using the familiar `require()` syntax.
+* **Use `require`** – Import additional Node.js packages available in your n8n instance using the familiar `require()` syntax. The module bundles popular helpers like `langchain` out of the box.
+* **Flexible execution** – Choose between running your script once for all items or once per incoming item.
 
 ## Installation
 
@@ -96,6 +97,7 @@ After installation, search for **OpenAI Script** in the n8n editor and drag the 
 * **Script** – A text area where you can write asynchronous JavaScript. You have access to the following variables:
   * `openai` – An instance of the OpenAI SDK initialised with your API key.
   * `input` – The input items array returned by `this.getInputData()`.
+  * `item` – In per-item mode, the current item being processed.
   * `require` – Node.js `require()` function to import additional packages installed in the environment.
 
 The value you `return` from your script becomes the node’s output. It should be structured as an array of items compatible with n8n’s data format (`INodeExecutionData[]`), or any structure accepted by `this.prepareOutputData()`.
