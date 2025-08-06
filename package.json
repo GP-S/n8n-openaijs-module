@@ -11,9 +11,11 @@
   ],
   "scripts": {
     "build": "tsc && cp nodes/openai.svg dist/nodes/openai.svg && cp nodes/openai.svg dist/credentials/openai.svg && cp nodes/*.node.json dist/nodes/",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "npm run build && node test/test-script.js"
   },
   "dependencies": {
+    "langchain": "^0.3.0",
     "openai": "^5.11.0"
   },
   "devDependencies": {
