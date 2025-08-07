@@ -79,7 +79,8 @@ export class OpenAIScript implements INodeType {
     if (baseUrl) {
       config.baseURL = baseUrl;
     }
-    const openai = new OpenAI(config);
+    const client = new OpenAI(config);
+    const openai = client;
 
     const requireFn = createRequire(__filename);
 
@@ -88,6 +89,7 @@ export class OpenAIScript implements INodeType {
       return new Proxy(
         {
           openai,
+          client,
           input: inputData,
           item: inputData,
           require: requireFn,

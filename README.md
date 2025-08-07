@@ -1,11 +1,11 @@
 # n8n‑nodes‑openai‑script
 
-An external node for [n8n](https://n8n.io/) that lets you run arbitrary asynchronous JavaScript with access to the [OpenAI TypeScript SDK](https://www.npmjs.com/package/openai). The node executes your script inside a `new Function` context and exposes a pre‑configured `openai` client, the incoming items, and the Node.js `require` function. Whatever value you `return` from your script becomes the output of the node.
+An external node for [n8n](https://n8n.io/) that lets you run arbitrary asynchronous JavaScript with access to the [OpenAI TypeScript SDK](https://www.npmjs.com/package/openai). The node executes your script inside a `new Function` context and exposes a pre‑configured OpenAI client (available as `openai` or `client`), the incoming items, and the Node.js `require` function. Whatever value you `return` from your script becomes the output of the node.
 
 ## Features
 
 * **Execute custom code** – Write any asynchronous JavaScript and use `await` without boilerplate.
-* **OpenAI SDK** – A fully initialised `openai` client is injected into your script, allowing you to call any OpenAI API supported by version 5.11.0.
+* **OpenAI SDK** – A fully initialised OpenAI client is injected into your script (accessible via `openai` or `client`), allowing you to call any OpenAI API supported by version 5.11.0.
 * **Access input items** – The `input` variable contains the array of items returned by `this.getInputData()`.
 * **Use `require`** – Import additional Node.js packages available in your n8n instance using the familiar `require()` syntax. The module bundles popular helpers like `langchain` out of the box.
 * **Flexible execution** – Choose between running your script once for all items or once per incoming item.
@@ -93,9 +93,9 @@ docker run -it --rm -p 5678:5678 n8n-custom
 
 After installation, search for **OpenAI Script** in the n8n editor and drag the node into your workflow. The node exposes two parameters:
 
-* **API Key** – Your OpenAI API key. This key is used to create the `openai` client. It is not persisted anywhere by the node.
+* **API Key** – Your OpenAI API key. This key is used to create the client. It is not persisted anywhere by the node.
 * **Script** – A text area where you can write asynchronous JavaScript. You have access to the following variables:
-  * `openai` – An instance of the OpenAI SDK initialised with your API key.
+  * `openai`/`client` – An instance of the OpenAI SDK initialised with your API key.
   * `input` – The input items array returned by `this.getInputData()`.
   * `item` – In per-item mode, the current item being processed.
   * `require` – Node.js `require()` function to import additional packages installed in the environment.
