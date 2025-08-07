@@ -60,7 +60,7 @@ export class OpenAIScript implements INodeType {
         },
         default: '',
         description:
-          'Asynchronous JavaScript to execute. You can access `openai`, `input`, `require`, `fetch`, `JSON`, and workflow helpers like `$json` and `$input`.',
+          'Asynchronous JavaScript to execute. You can access `openai`, `input`, `item`, `require`, `fetch`, `JSON`, and workflow helpers like `$json` and `$input`.',
         noDataExpression: true,
         required: true,
       },
@@ -83,13 +83,13 @@ export class OpenAIScript implements INodeType {
 
     const requireFn = createRequire(__filename);
 
-    const createWorkflowProxy = (index: number, inputData: any) => {
+    const createWorkflowProxy = (index: number) => {
       const dataProxy = this.getWorkflowDataProxy(index);
       return new Proxy(
         {
           openai,
-          input: inputData,
-          item: inputData,
+          input: items,
+          item: items[index],
           require: requireFn,
           console,
           fetch: (globalThis as any).fetch,
@@ -122,7 +122,7 @@ export class OpenAIScript implements INodeType {
     if (mode === 'runOnceForAllItems') {
       let result: unknown;
       try {
-        result = await asyncFunction(createWorkflowProxy(0, items));
+        result = await asyncFunction(createWorkflowProxy(0));
       } catch (error) {
         throw new NodeOperationError(this.getNode(), (error as Error).message);
       }
@@ -145,7 +145,7 @@ export class OpenAIScript implements INodeType {
       for (let i = 0; i < items.length; i++) {
         let result: unknown;
         try {
-          result = await asyncFunction(createWorkflowProxy(i, items[i]));
+          result = await asyncFunction(createWorkflowProxy(i));
         } catch (error) {
           throw new NodeOperationError(this.getNode(), (error as Error).message, { itemIndex: i });
         }
