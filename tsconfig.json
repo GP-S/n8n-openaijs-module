@@ -8,7 +8,9 @@
     "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "types": ["node"]
   },
   "include": ["nodes/**/*.ts"],
   "exclude": ["node_modules", "dist"]
