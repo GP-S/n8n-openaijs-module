@@ -21,7 +21,8 @@
   "devDependencies": {
     "n8n-core": "^1.97.0",
     "n8n-workflow": "^1.97.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@types/node": "^20.14.10"
   },
   "engines": {
     "node": ">=18.0.0"
