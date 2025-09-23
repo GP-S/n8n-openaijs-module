@@ -1,42 +1,46 @@
-const { OpenAIScript } = require('../dist/nodes/OpenAIScript.node.js');
+const { UnsafeCode } = require('../dist/nodes/UnsafeCode.node.js');
 
 (async () => {
-  const node = new OpenAIScript();
+  const node = new UnsafeCode();
+
+  const items = [
+    { json: { value: 1 } },
+    { json: { value: 2 } },
+  ];
 
   const context = {
-    async getCredentials() {
-      return { apiKey: 'test', baseUrl: '' };
-    },
     getInputData() {
-      return [];
+      return items;
     },
     getNodeParameter(name) {
-      if (name === 'script') {
-        return (
-          "const os = require('os');" +
-          "\nconsole.log('platform', os.platform());" +
-          "\nconsole.log('openai chat defined', typeof openai.chat);" +
-          "\nconsole.log('fetch defined', typeof fetch);" +
-          "\nconsole.log('json stringify works', JSON.stringify({ test: 1 }));" +
-          "\nreturn { ok: true };"
-        );
-      }
       if (name === 'mode') {
         return 'runOnceForAllItems';
+      }
+      if (name === 'jsCode') {
+        return (
+          "const path = require('path');" +
+          "\nreturn items.map((item, index) => ({" +
+          "\n  json: {" +
+          "\n    original: item.json.value," +
+          "\n    doubled: item.json.value * 2," +
+          "\n    basename: path.basename(__filename)," +
+          "\n    index," +
+          "\n  }," +
+          "\n}));"
+        );
       }
       return '';
     },
     getWorkflowDataProxy() {
       return {};
     },
-    getNode() {
+    getWorkflowStaticData() {
       return {};
     },
-    helpers: {
-      returnJsonArray(data) {
-        return Array.isArray(data) ? data : [data];
-      },
+    getNode() {
+      return { name: 'Unsafe Code' };
     },
+    helpers: {},
     prepareOutputData(data) {
       return [data];
     },
