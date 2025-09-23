@@ -3,11 +3,13 @@ import type {
   IExecuteFunctions,
   INode,
   INodeExecutionData,
+  INodeProperties,
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import { createRequire } from 'module';
+import { format } from 'util';
 
 const AsyncFunction = Object.getPrototypeOf(async function () {})
   .constructor as new (...args: string[]) => (...funcArgs: any[]) => Promise<any>;
@@ -86,6 +88,45 @@ const normalizeResult = (
   return [ensureExecutionData(result)];
 };
 
+const javascriptCodeDescription: INodeProperties[] = [
+  {
+    displayName: 'JavaScript',
+    name: 'jsCode',
+    type: 'string',
+    typeOptions: {
+      editor: 'codeNodeEditor',
+      editorLanguage: 'javaScript',
+    },
+    default: '',
+    description:
+      'JavaScript code to execute.<br><br>Tip: You can use luxon vars like <code>$today</code> for dates and <code>$jmespath</code> for querying JSON structures. <a href="https://docs.n8n.io/nodes/n8n-nodes-base.function">Learn more</a>.',
+    noDataExpression: true,
+    displayOptions: {
+      show: {
+        mode: ['runOnceForAllItems'],
+      },
+    },
+  },
+  {
+    displayName: 'JavaScript',
+    name: 'jsCode',
+    type: 'string',
+    typeOptions: {
+      editor: 'codeNodeEditor',
+      editorLanguage: 'javaScript',
+    },
+    default: '',
+    description:
+      'JavaScript code to execute.<br><br>Tip: You can use luxon vars like <code>$today</code> for dates and <code>$jmespath</code> for querying JSON structures. <a href="https://docs.n8n.io/nodes/n8n-nodes-base.function">Learn more</a>.',
+    noDataExpression: true,
+    displayOptions: {
+      show: {
+        mode: ['runOnceForEachItem'],
+      },
+    },
+  },
+];
+
 export class UnsafeCode implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Unsafe Code',
@@ -120,24 +161,7 @@ export class UnsafeCode implements INodeType {
         ],
         default: 'runOnceForAllItems',
       },
-      {
-        displayName: 'JavaScript',
-        name: 'jsCode',
-        type: 'string',
-        typeOptions: {
-          editor: 'codeNodeEditor',
-          editorLanguage: 'javaScript',
-        },
-        default: '',
-        description:
-          'JavaScript code to execute.<br><br>Tip: You can use luxon vars like <code>$today</code> for dates and <code>$jmespath</code> for querying JSON structures. <a href="https://docs.n8n.io/nodes/n8n-nodes-base.function">Learn more</a>.',
-        noDataExpression: true,
-        displayOptions: {
-          show: {
-            mode: ['runOnceForAllItems', 'runOnceForEachItem'],
-          },
-        },
-      },
+      ...javascriptCodeDescription,
       {
         displayName:
           'Type <code>$</code> for a list of <a target="_blank" href="https://docs.n8n.io/code-examples/methods-variables-reference/">special vars/methods</a>. Debug by using <code>console.log()</code> statements and viewing their output in the browser console.',
@@ -156,7 +180,31 @@ export class UnsafeCode implements INodeType {
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const mode = this.getNodeParameter('mode', 0) as 'runOnceForAllItems' | 'runOnceForEachItem';
+    const workflowMode = this.getMode();
     const requireFn = createRequire(__filename);
+
+    const consoleBinding = (() => {
+      if (workflowMode !== 'manual') {
+        return console;
+      }
+
+      const manualConsole = Object.create(console) as Console;
+      const consoleMethods = ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'table'] as const;
+      const sendMessage = this.sendMessageToUI.bind(this);
+
+      const relayToUi = (args: unknown[]) => {
+        const message = args.length === 0 ? '' : format(...(args as any[]));
+        sendMessage(message);
+      };
+
+      for (const method of consoleMethods) {
+        manualConsole[method] = (...args: unknown[]) => {
+          relayToUi(args);
+        };
+      }
+
+      return manualConsole;
+    })();
 
     const runUserCode = async (index: number, contextData: IDataObject): Promise<unknown> => {
       const script = this.getNodeParameter('jsCode', index) as string;
@@ -181,7 +229,7 @@ export class UnsafeCode implements INodeType {
         module,
         exports: module.exports,
         process,
-        console,
+        console: consoleBinding,
         Buffer,
         __dirname: process.cwd(),
         __filename,

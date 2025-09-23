@@ -37,6 +37,9 @@ const { UnsafeCode } = require('../dist/nodes/UnsafeCode.node.js');
     getWorkflowStaticData() {
       return {};
     },
+    getMode() {
+      return 'integrated';
+    },
     getNode() {
       return { name: 'Unsafe Code' };
     },
