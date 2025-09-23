@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "build": "tsc && mkdir -p dist/nodes && cp nodes/code.svg dist/nodes/code.svg && cp nodes/*.node.json dist/nodes/",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run patch:ui",
+    "patch:ui": "node scripts/enable-inline-editor.js",
     "test": "npm run build && node test/test-script.js"
   },
   "dependencies": {

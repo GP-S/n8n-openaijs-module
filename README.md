@@ -29,6 +29,7 @@ npm run build
 ```bash
 cd ~/.n8n
 npm install /absolute/path/to/n8n-nodes-unsafe-code
+npm run patch:ui
 npx n8n start
 ```
 
@@ -60,8 +61,11 @@ FROM n8nio/n8n:latest
 
 COPY ./n8n-nodes-unsafe-code /opt/n8n-nodes-unsafe-code
 RUN cd /usr/local/lib/node_modules/n8n \
-  && npm install /opt/n8n-nodes-unsafe-code
+  && npm install /opt/n8n-nodes-unsafe-code \
+  && npm run patch:ui
 ```
+
+> ℹ️ **Inline editor patch:** The installation runs a small script that adds `n8n-nodes-unsafe-code.unsafeCode` to the front-end allow list used by n8n’s inline Code node editor. If you still see a read-only field, run `npm run patch:ui` inside your n8n installation directory to re-apply the patch after upgrades.
 
 ## Usage
 
