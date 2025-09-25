@@ -141,6 +141,12 @@ export class UnsafeCode implements INodeType {
     inputs: ['main'],
     outputs: ['main'],
     parameterPane: 'wide',
+    credentials: [
+      {
+        name: 'unsafeCodeApi',
+        required: false,
+      },
+    ],
     properties: [
       {
         displayName: 'Mode',
@@ -208,6 +214,20 @@ export class UnsafeCode implements INodeType {
 
     const runUserCode = async (index: number, contextData: IDataObject): Promise<unknown> => {
       const script = this.getNodeParameter('jsCode', index) as string;
+      const credentialData = (await this.getCredentials('unsafeCodeApi')) as IDataObject | null;
+      const exposedCredential =
+        credentialData !== null
+          ? Object.freeze({
+              url:
+                typeof credentialData.url === 'string'
+                  ? credentialData.url
+                  : String(credentialData.url ?? ''),
+              token:
+                typeof credentialData.token === 'string'
+                  ? credentialData.token
+                  : String(credentialData.token ?? ''),
+            })
+          : undefined;
       const dataProxy = this.getWorkflowDataProxy(index);
 
       const helpers = {
@@ -241,6 +261,13 @@ export class UnsafeCode implements INodeType {
         clearTimeout,
         clearInterval,
       };
+
+      Object.defineProperty(context, 'UNSAFE_CODE_CREDENTIALS', {
+        value: exposedCredential,
+        writable: false,
+        configurable: false,
+        enumerable: true,
+      });
 
       const contextProxy = new Proxy(context, {
         has() {

@@ -28,6 +28,9 @@
   "n8n": {
     "nodes": [
       "dist/nodes/UnsafeCode.node.js"
+    ],
+    "credentials": [
+      "dist/credentials/UnsafeCodeApi.credentials.js"
     ]
   }
 }

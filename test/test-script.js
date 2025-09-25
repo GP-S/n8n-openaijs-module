@@ -37,6 +37,9 @@ const { UnsafeCode } = require('../dist/nodes/UnsafeCode.node.js');
     getWorkflowStaticData() {
       return {};
     },
+    async getCredentials() {
+      return null;
+    },
     getMode() {
       return 'integrated';
     },
