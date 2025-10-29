@@ -316,7 +316,7 @@ export class UnsafeCode implements INodeType {
       try {
         result = await asyncFunction(contextProxy);
       } catch (error) {
-        throw new NodeOperationError(node, error as Error, {
+        throw new NodeOperationError(this.getNode(), error as Error, {
           itemIndex: mode === 'runOnceForEachItem' ? index : undefined,
         });
       }
