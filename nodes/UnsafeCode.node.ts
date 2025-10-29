@@ -435,8 +435,13 @@ export class UnsafeCode implements INodeType {
     }
 
     const [preparedMain] = await this.prepareOutputData(mainOutput);
+
+    if (!useErrorOutput) {
+      return [preparedMain];
+    }
+
     const [preparedError] = await this.prepareOutputData(errorOutput);
 
-    return [preparedMain, preparedError];
+    return [preparedMain, preparedError ?? []];
   }
 }
