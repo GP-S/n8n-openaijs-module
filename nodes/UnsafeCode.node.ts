@@ -197,10 +197,18 @@ export class UnsafeCode implements INodeType {
     const workflowMode = this.getMode();
     const requireFn = createRequire(__filename);
 
+    type OnErrorBehaviour =
+      | 'stopWorkflow'
+      | 'continueRegularOutput'
+      | 'continueErrorOutput'
+      | 'sendToErrorOutput';
+
     const continueOnFail = this.continueOnFail();
-    const onErrorBehaviour = node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow');
+    const onErrorBehaviour =
+      (node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow')) as OnErrorBehaviour;
     const shouldContinueOnFail = onErrorBehaviour !== 'stopWorkflow';
-    const useErrorOutput = onErrorBehaviour === 'continueErrorOutput';
+    const useErrorOutput =
+      onErrorBehaviour === 'continueErrorOutput' || onErrorBehaviour === 'sendToErrorOutput';
 
     const consoleBinding = (() => {
       if (workflowMode !== 'manual') {
