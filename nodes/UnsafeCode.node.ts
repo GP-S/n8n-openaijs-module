@@ -139,8 +139,14 @@ export class UnsafeCode implements INodeType {
       name: 'Unsafe Code',
     },
     inputs: ['main'],
-    outputs: ['main'],
-    outputNames: ['Main'],
+    outputs: [
+      'main',
+      {
+        type: 'main',
+        category: 'error',
+      },
+    ],
+    outputNames: ['Main', 'Error'],
     parameterPane: 'wide',
     credentials: [
       {
@@ -310,7 +316,7 @@ export class UnsafeCode implements INodeType {
       try {
         result = await asyncFunction(contextProxy);
       } catch (error) {
-        throw new NodeOperationError(node, error as Error, {
+        throw new NodeOperationError(this.getNode(), error as Error, {
           itemIndex: mode === 'runOnceForEachItem' ? index : undefined,
         });
       }
@@ -420,12 +426,8 @@ export class UnsafeCode implements INodeType {
     }
 
     const [preparedMain] = await this.prepareOutputData(mainOutput);
+    const [preparedError] = await this.prepareOutputData(errorOutput);
 
-    if (useErrorOutput) {
-      const [preparedError] = await this.prepareOutputData(errorOutput);
-      return [preparedMain, preparedError];
-    }
-
-    return [preparedMain];
+    return [preparedMain, preparedError];
   }
 }
