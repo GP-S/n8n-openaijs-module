@@ -144,6 +144,7 @@ export class UnsafeCode implements INodeType {
       {
         type: 'main',
         category: 'error',
+        displayName: 'Error',
       },
     ],
     outputNames: ['Main', 'Error'],
