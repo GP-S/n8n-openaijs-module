@@ -139,15 +139,8 @@ export class UnsafeCode implements INodeType {
       name: 'Unsafe Code',
     },
     inputs: ['main'],
-    outputs: [
-      'main',
-      {
-        type: 'main',
-        category: 'error',
-        displayName: 'Error',
-      },
-    ],
-    outputNames: ['Main', 'Error'],
+    outputs: ['main'],
+    outputNames: ['Main'],
     parameterPane: 'wide',
     credentials: [
       {
@@ -207,9 +200,10 @@ export class UnsafeCode implements INodeType {
     const continueOnFail = this.continueOnFail();
     const onErrorBehaviour =
       (node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow')) as OnErrorBehaviour;
-    const shouldContinueOnFail = onErrorBehaviour !== 'stopWorkflow';
-    const useErrorOutput =
-      onErrorBehaviour === 'continueErrorOutput' || onErrorBehaviour === 'sendToErrorOutput';
+    const shouldContinueOnFail =
+      onErrorBehaviour === 'continueRegularOutput' || onErrorBehaviour === 'continueErrorOutput';
+    const shouldSendToErrorOutput = onErrorBehaviour === 'sendToErrorOutput';
+    const useErrorOutput = onErrorBehaviour === 'continueErrorOutput';
 
     const consoleBinding = (() => {
       if (workflowMode !== 'manual') {
@@ -380,6 +374,10 @@ export class UnsafeCode implements INodeType {
 
     const pushErrorOutput = (error: unknown, itemIndex?: number) => {
       const nodeError = wrapNodeError(error, itemIndex);
+
+      if (shouldSendToErrorOutput) {
+        throw nodeError;
+      }
 
       if (!shouldContinueOnFail) {
         throw nodeError;
