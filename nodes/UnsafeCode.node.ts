@@ -140,6 +140,7 @@ export class UnsafeCode implements INodeType {
     },
     inputs: ['main'],
     outputs: ['main'],
+    outputNames: ['Main'],
     parameterPane: 'wide',
     credentials: [
       {
@@ -184,10 +185,16 @@ export class UnsafeCode implements INodeType {
   };
 
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+    const node = this.getNode();
     const items = this.getInputData();
     const mode = this.getNodeParameter('mode', 0) as 'runOnceForAllItems' | 'runOnceForEachItem';
     const workflowMode = this.getMode();
     const requireFn = createRequire(__filename);
+
+    const continueOnFail = this.continueOnFail();
+    const onErrorBehaviour = node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow');
+    const shouldContinueOnFail = onErrorBehaviour !== 'stopWorkflow';
+    const useErrorOutput = onErrorBehaviour === 'continueErrorOutput';
 
     const consoleBinding = (() => {
       if (workflowMode !== 'manual') {
@@ -303,7 +310,7 @@ export class UnsafeCode implements INodeType {
       try {
         result = await asyncFunction(contextProxy);
       } catch (error) {
-        throw new NodeOperationError(this.getNode(), (error as Error).message, {
+        throw new NodeOperationError(node, error as Error, {
           itemIndex: mode === 'runOnceForEachItem' ? index : undefined,
         });
       }
@@ -321,32 +328,104 @@ export class UnsafeCode implements INodeType {
       return result;
     };
 
+    const mainOutput: INodeExecutionData[] = [];
+    const errorOutput: INodeExecutionData[] = [];
+
+    const addToMainOutput = (result: unknown, itemIndex?: number) => {
+      const normalized = normalizeResult(node, result, itemIndex);
+      normalized.forEach((item) => {
+        if (mode === 'runOnceForEachItem' && itemIndex !== undefined && !item.pairedItem) {
+          item.pairedItem = { item: itemIndex };
+        }
+        if (item.json && isObject(item.json)) {
+          item.json = standardizeOutput(item.json);
+        }
+        mainOutput.push(item);
+      });
+    };
+
+    const wrapNodeError = (error: unknown, itemIndex?: number): NodeOperationError => {
+      if (error instanceof NodeOperationError) {
+        if (mode === 'runOnceForEachItem' && itemIndex !== undefined && error.context.itemIndex === undefined) {
+          error.context.itemIndex = itemIndex;
+        }
+        return error;
+      }
+
+      if (error instanceof Error || typeof error === 'string') {
+        return new NodeOperationError(node, error, {
+          itemIndex: mode === 'runOnceForEachItem' ? itemIndex : undefined,
+        });
+      }
+
+      return new NodeOperationError(node, new Error('Unknown error'), {
+        itemIndex: mode === 'runOnceForEachItem' ? itemIndex : undefined,
+      });
+    };
+
+    const pushErrorOutput = (error: unknown, itemIndex?: number) => {
+      const nodeError = wrapNodeError(error, itemIndex);
+
+      if (!shouldContinueOnFail) {
+        throw nodeError;
+      }
+
+      const baseErrorJson = {
+        message: nodeError.message,
+        name: nodeError.name,
+      } as IDataObject;
+
+      if (nodeError.stack) {
+        baseErrorJson.stack = nodeError.stack;
+      }
+
+      const pairedItem =
+        mode === 'runOnceForEachItem'
+          ? itemIndex !== undefined
+            ? { item: itemIndex }
+            : undefined
+          : items.length > 0
+            ? items.map((_, inputIndex) => ({ item: inputIndex }))
+            : undefined;
+
+      const errorItem: INodeExecutionData = {
+        json: { error: baseErrorJson },
+        ...(pairedItem ? { pairedItem } : {}),
+      };
+
+      if (useErrorOutput) {
+        errorOutput.push(errorItem);
+        return;
+      }
+
+      mainOutput.push(errorItem);
+    };
+
     if (mode === 'runOnceForAllItems') {
-      const result = await runUserCode(0, { items });
-      const normalized = normalizeResult(this.getNode(), result);
-      normalized.forEach((item) => {
-        if (item.json && isObject(item.json)) {
-          item.json = standardizeOutput(item.json);
+      try {
+        const result = await runUserCode(0, { items });
+        addToMainOutput(result);
+      } catch (error) {
+        pushErrorOutput(error);
+      }
+    } else {
+      for (let index = 0; index < items.length; index++) {
+        try {
+          const result = await runUserCode(index, { item: items[index] });
+          addToMainOutput(result, index);
+        } catch (error) {
+          pushErrorOutput(error, index);
         }
-      });
-      return this.prepareOutputData(normalized);
+      }
     }
 
-    const returnData: INodeExecutionData[] = [];
-    for (let index = 0; index < items.length; index++) {
-      const result = await runUserCode(index, { item: items[index] });
-      const normalized = normalizeResult(this.getNode(), result, index);
-      normalized.forEach((item) => {
-        if (!item.pairedItem) {
-          item.pairedItem = { item: index };
-        }
-        if (item.json && isObject(item.json)) {
-          item.json = standardizeOutput(item.json);
-        }
-        returnData.push(item);
-      });
+    const [preparedMain] = await this.prepareOutputData(mainOutput);
+
+    if (useErrorOutput) {
+      const [preparedError] = await this.prepareOutputData(errorOutput);
+      return [preparedMain, preparedError];
     }
 
-    return this.prepareOutputData(returnData);
+    return [preparedMain];
   }
 }
