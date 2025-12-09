@@ -139,14 +139,8 @@ export class UnsafeCode implements INodeType {
       name: 'Unsafe Code',
     },
     inputs: ['main'],
-    outputs: [
-      'main',
-      {
-        type: 'main',
-        category: 'error',
-      },
-    ],
-    outputNames: ['Main', 'Error'],
+    outputs: ['main'],
+    outputNames: ['Main'],
     parameterPane: 'wide',
     credentials: [
       {
@@ -197,9 +191,18 @@ export class UnsafeCode implements INodeType {
     const workflowMode = this.getMode();
     const requireFn = createRequire(__filename);
 
+    type OnErrorBehaviour =
+      | 'stopWorkflow'
+      | 'continueRegularOutput'
+      | 'continueErrorOutput'
+      | 'sendToErrorOutput';
+
     const continueOnFail = this.continueOnFail();
-    const onErrorBehaviour = node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow');
-    const shouldContinueOnFail = onErrorBehaviour !== 'stopWorkflow';
+    const onErrorBehaviour =
+      (node.onError ?? (continueOnFail ? 'continueRegularOutput' : 'stopWorkflow')) as OnErrorBehaviour;
+    const shouldContinueOnFail =
+      onErrorBehaviour === 'continueRegularOutput' || onErrorBehaviour === 'continueErrorOutput';
+    const shouldSendToErrorOutput = onErrorBehaviour === 'sendToErrorOutput';
     const useErrorOutput = onErrorBehaviour === 'continueErrorOutput';
 
     const consoleBinding = (() => {
@@ -372,6 +375,10 @@ export class UnsafeCode implements INodeType {
     const pushErrorOutput = (error: unknown, itemIndex?: number) => {
       const nodeError = wrapNodeError(error, itemIndex);
 
+      if (shouldSendToErrorOutput) {
+        throw nodeError;
+      }
+
       if (!shouldContinueOnFail) {
         throw nodeError;
       }
@@ -426,8 +433,13 @@ export class UnsafeCode implements INodeType {
     }
 
     const [preparedMain] = await this.prepareOutputData(mainOutput);
+
+    if (!useErrorOutput) {
+      return [preparedMain];
+    }
+
     const [preparedError] = await this.prepareOutputData(errorOutput);
 
-    return [preparedMain, preparedError];
+    return [preparedMain, preparedError ?? []];
   }
 }
