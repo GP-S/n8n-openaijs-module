@@ -1,37 +1,36 @@
 {
-  "name": "n8n-nodes-openai-script",
+  "name": "n8n-nodes-unsafe-code",
   "version": "1.0.0",
-  "description": "An n8n community node for executing arbitrary JavaScript with access to the OpenAI SDK.",
+  "description": "An n8n community node that clones the Code node without sandbox restrictions.",
   "author": "",
   "license": "MIT",
-  "main": "dist/nodes/OpenAIScript.node.js",
-  "types": "dist/nodes/OpenAIScript.node.d.ts",
+  "main": "dist/nodes/UnsafeCode.node.js",
+  "types": "dist/nodes/UnsafeCode.node.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc && cp nodes/openai.svg dist/nodes/openai.svg && cp nodes/openai.svg dist/credentials/openai.svg && cp nodes/*.node.json dist/nodes/",
-    "prepare": "npm run build",
+    "build": "tsc && mkdir -p dist/nodes && cp nodes/code.svg dist/nodes/code.svg && cp nodes/*.node.json dist/nodes/",
+    "prepare": "npm run build && npm run patch:ui",
+    "patch:ui": "node scripts/enable-inline-editor.js",
     "test": "npm run build && node test/test-script.js"
   },
   "dependencies": {
-    "langchain": "^0.3.0",
-    "openai": "^5.11.0"
-  },
-  "devDependencies": {
+    "@types/node": "^18.19.42",
     "n8n-core": "^1.97.0",
     "n8n-workflow": "^1.97.0",
     "typescript": "^5.2.2"
   },
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   },
   "n8n": {
     "nodes": [
-      "dist/nodes/OpenAIScript.node.js"
+      "dist/nodes/UnsafeCode.node.js"
     ],
     "credentials": [
-      "dist/credentials/OpenAIApiEndpoint.credentials.js"
+      "dist/credentials/UnsafeCodeApi.credentials.js"
     ]
   }
 }

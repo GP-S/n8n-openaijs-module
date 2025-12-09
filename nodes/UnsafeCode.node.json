@@ -1,0 +1,11 @@
+{
+  "node": "n8n-nodes-unsafe-code.unsafeCode",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "details": "Run custom JavaScript without the n8n sandbox restrictions.",
+  "categories": ["Development", "Core Nodes"],
+  "subcategories": {
+    "Development": ["Utilities"],
+    "Core Nodes": ["Helpers", "Data Transformation"]
+  }
+}
